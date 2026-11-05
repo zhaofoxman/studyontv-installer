@@ -7,7 +7,7 @@ name: Build installers (Windows / macOS / Linux)
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "release/v*"]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -50,6 +50,22 @@ jobs:
           New-Item -ItemType Directory -Force dist | Out-Null
           Copy-Item "${{ matrix.bin }}" "dist/StudyOnTV安装助手-v$v.exe"
           Copy-Item README.md dist/
+          # 自带 adb：官方 platform-tools（Windows 版）
+          Invoke-WebRequest "https://dl.google.com/android/repository/platform-tools-latest-windows.zip" -OutFile pt.zip
+          Expand-Archive pt.zip -DestinationPath pt_tmp
+          Move-Item pt_tmp/platform-tools dist/platform-tools
+          # 自带最新 TV 版 APK（btcfoxman 优先，其次 chadyi，取名字带 TV 的 .apk）
+          New-Item -ItemType Directory -Force dist/apk | Out-Null
+          $apkUrl = $null
+          foreach ($repo in @("btcfoxman/StudyOnTV", "chadyi/StudyOnTV")) {
+            try {
+              $rel = Invoke-RestMethod "https://api.github.com/repos/$repo/releases/latest"
+              $asset = $rel.assets | Where-Object { $_.name -match "TV" -and $_.name -like "*.apk" } | Select-Object -First 1
+              if ($asset) { $apkUrl = $asset.browser_download_url; break }
+            } catch { Write-Host "release lookup failed for $repo" }
+          }
+          if ($apkUrl) { Invoke-WebRequest $apkUrl -OutFile dist/apk/StudyOnTV-TV.apk }
+          else { Write-Warning "未找到 TV 版 APK，本次安装包不自带 APK（程序内仍可下载/上传）" }
           Compress-Archive -Path dist/* -DestinationPath "${{ matrix.artifact }}-v$v.zip"
           "PKG=${{ matrix.artifact }}-v$v.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
       - name: Package (macOS / Linux)
@@ -59,14 +75,39 @@ jobs:
           mkdir -p dist
           cp "${{ matrix.bin }}" "dist/StudyOnTV安装助手-v$V"
           cp README.md dist/
-          zip -j "${{ matrix.artifact }}-v$V.zip" dist/*
+          # 自带 adb：官方 platform-tools（按平台选包）
+          if [ "${{ runner.os }}" = "macOS" ]; then PT="platform-tools-latest-darwin.zip"; else PT="platform-tools-latest-linux.zip"; fi
+          curl -sSL "https://dl.google.com/android/repository/$PT" -o pt.zip
+          unzip -q pt.zip -d pt_tmp
+          mv pt_tmp/platform-tools dist/platform-tools
+          chmod +x dist/platform-tools/adb || true
+          # 自带最新 TV 版 APK（btcfoxman 优先，其次 chadyi，取名字带 TV 的 .apk）
+          mkdir -p dist/apk
+          APK_URL=""
+          for repo in btcfoxman/StudyOnTV chadyi/StudyOnTV; do
+            APK_URL=$(curl -sSL "https://api.github.com/repos/$repo/releases/latest" | grep -o '"browser_download_url": *"[^"]*"' | grep -i '\.apk"' | grep -i 'TV' | head -1 | sed 's/.*: *"//; s/"$//')
+            [ -n "$APK_URL" ] && break
+          done
+          if [ -n "$APK_URL" ]; then curl -sSL "$APK_URL" -o dist/apk/StudyOnTV-TV.apk; else echo "::warning::未找到 TV 版 APK，本次安装包不自带 APK"; fi
+          (cd dist && zip -qr "../${{ matrix.artifact }}-v$V.zip" .)
           echo "PKG=${{ matrix.artifact }}-v$V.zip" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
           path: ${{ env.PKG }}
+      - name: Resolve release tag
+        if: startsWith(github.ref, 'refs/tags/') || startsWith(github.ref, 'refs/heads/release/')
+        id: reltag
+        shell: bash
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME#release/}" >> "$GITHUB_OUTPUT"
+          fi
       - name: Publish to Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: steps.reltag.outputs.tag != ''
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.reltag.outputs.tag }}
           files: ${{ env.PKG }}
