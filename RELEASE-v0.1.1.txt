@@ -1,0 +1,1 @@
+v0.1.1: Windows 静态链接 MSVC 运行时，修复缺 VCRUNTIME140.dll 无法启动。
