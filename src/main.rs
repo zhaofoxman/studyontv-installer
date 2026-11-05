@@ -249,7 +249,7 @@ async fn find_adb(state: &AppState) -> Result<(String, String), String> {
             }
         }
     }
-    Err("未找到 adb。请安装 Android platform-tools，并把 adb 放到本程序同目录，或加入系统 PATH；教程页第 0 步有下载链接。".into())
+    Err("未找到 adb。安装包自带 platform-tools 文件夹，请确认它和本程序在同一目录（只拷 exe 一个文件会缺 adb）；或者自行安装 Android platform-tools 并把 adb 加入系统 PATH。".into())
 }
 
 async fn run_adb(state: &AppState, args: &[&str], secs: u64) -> Result<(bool, String), String> {

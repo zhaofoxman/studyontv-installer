@@ -12,11 +12,10 @@
 
 ## 快速使用（普通用户）
 
-1. 下载对应平台的可执行文件（由 GitHub Actions 构建，见下「发布」；或按「自己编译」双击脚本生成）；
-2. 准备 **adb**：下载 Google 官方 [platform-tools](https://developer.android.com/tools/releases/platform-tools)，
-   解压后把整个 `platform-tools` 文件夹（或单独的 `adb` / `adb.exe`）放到**与本程序同一个文件夹**；adb 在系统 PATH 中也可以；
+1. 下载对应平台的完整安装包 zip（由 GitHub Actions 在打包时组装，见下「发布」），**完整解压**到一个文件夹；
+2. 安装包已自带 **adb**（`platform-tools` 文件夹）和**打包时最新的 TV 版 APK**（`apk` 文件夹），不用再单独下载任何东西；
 3. 双击运行本程序 → 浏览器自动打开 `http://127.0.0.1:18099/`（端口被占用时会顺延到 18118）；
-4. 按网页第 1 步在电视上开网络调试 → 第 2 步下载/上传 TV 版 APK → 第 3 步扫描 → 点「一键安装到这台」；
+4. 按网页第 1 步在电视上开网络调试 → 第 2 步确认自带 APK（一般可跳过）→ 第 3 步扫描 → 点「一键安装到这台」；
 5. 去电视上完成首次设置（设管理密码、按需开权限），之后家长手机同 WiFi 扫码或打开管理页即可管理。
 
 关闭运行窗口即退出。服务只监听 `127.0.0.1`，且只允许扫描/操作局域网私有 IP。
@@ -43,7 +42,7 @@
 - 手动：Actions → “Build installers” → Run workflow，三个平台的 zip 在 Artifacts 里下载；
 - 发版：打标签 `git tag v0.1.0 && git push --tags`，zip 会自动附到 Release。
 
-最终用户拿到的是单个可执行文件（网页已内嵌编译进二进制），解压双击即用，不用装 Rust、不用装运行时。
+最终用户拿到的是一个完整安装包 zip：可执行文件（网页已内嵌编译进二进制）+ `platform-tools`（adb）+ `apk`（最新 TV 版 APK），解压双击即用，不用装 Rust、不用装运行时、不用另下 adb 和 APK。打包时 workflow 会从 Google 官方地址下载对应平台的 platform-tools，并从 StudyOnTV 的 GitHub Release（btcfoxman 优先，其次 chadyi）取最新 TV 版 APK 一并放进 zip。
 
 ## 工作原理
 

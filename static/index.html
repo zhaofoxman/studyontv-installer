@@ -47,10 +47,12 @@
 <main>
 
   <section class="card">
-    <h2>第 0 步 · 准备 adb（只需一次）</h2>
-    <p class="small muted">本助手通过 adb 给电视装应用。如果上方徽章显示「ADB：未找到」，请下载 Google 官方
-    <a href="https://developer.android.com/tools/releases/platform-tools" target="_blank" rel="noopener">platform-tools</a>，
-    解压后把 <code>adb.exe</code>（Mac 是 <code>adb</code>）连同 platform-tools 文件夹放到<b>本程序同一个文件夹</b>里，然后刷新本页。Windows 10 以上和 macOS 都自带下载用的 curl，不用另装。</p>
+    <h2>第 0 步 · adb 已自带，不用准备</h2>
+    <p class="small muted">本助手通过 adb 给电视装应用。<b>安装包已经自带 adb</b>（和程序同目录的 <code>platform-tools</code> 文件夹里），
+    解压后直接用，不需要再单独下载安装。上方徽章显示「ADB：已就绪」就可以跳过这一步。
+    如果显示「ADB：未找到」，多半是只把 exe 单独拷走了——请把压缩包<b>完整解压</b>，让 <code>platform-tools</code> 文件夹和 exe 保持在同一目录，再刷新本页。
+    实在不行也可以自行安装 Google 官方
+    <a href="https://developer.android.com/tools/releases/platform-tools" target="_blank" rel="noopener">platform-tools</a> 并把 adb 加入系统 PATH。</p>
   </section>
 
   <section class="card">
@@ -89,19 +91,20 @@
   </section>
 
   <section class="card">
-    <h2>第 2 步 · 准备 TV 版安装包</h2>
+    <h2>第 2 步 · TV 版安装包已自带</h2>
+    <p class="small muted">当前安装包：<span id="apkNow">检测中…</span></p>
+    <p class="small muted"><b>安装包已经自带打包时最新的 TV 版 APK</b>（在和程序同目录的 <code>apk</code> 文件夹里），
+    一般直接跳到第 3 步安装即可，不用再下载。只有想换版本时才需要下面两个可选项：</p>
     <div class="row">
-      <button onclick="downloadApk(this)">⬇ 下载最新 TV 版 APK（GitHub Release）</button>
-      <label class="small">或上传已下载的 APK：
+      <button class="ghost" onclick="downloadApk(this)">⬇ 重新下载最新 TV 版 APK（GitHub Release，可选）</button>
+      <label class="small">或上传自己的 APK：
         <input type="file" id="apkFile" accept=".apk">
       </label>
       <button class="ghost" onclick="uploadApk(this)">上传</button>
     </div>
-    <p class="small muted">当前安装包：<span id="apkNow">检测中…</span><br>
-    下载源按文档：蒲公英 TV 版 <a href="https://www.pgyer.com/StudyOnTVTV" target="_blank" rel="noopener">pgyer.com/StudyOnTVTV</a>，
+    <p class="small muted">下载源按文档：蒲公英 TV 版 <a href="https://www.pgyer.com/StudyOnTVTV" target="_blank" rel="noopener">pgyer.com/StudyOnTVTV</a>，
     GitHub 备用 <a href="https://github.com/btcfoxman/StudyOnTV/releases" target="_blank" rel="noopener">btcfoxman/StudyOnTV Releases</a>。
-    本助手优先从 GitHub Release 自动下载名字带 TV 的 APK；找不到时请手动从蒲公英下载后上传。
-    也可以把 APK 直接放到本程序同目录，刷新即识别（优先选文件名带 tv 的）。</p>
+    也可以把 APK 直接放到本程序同目录或 <code>apk</code> 文件夹，刷新即识别（优先选文件名带 tv 的）。</p>
   </section>
 
   <section class="card">
