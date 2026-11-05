@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StudyOnTV 一键安装助手</title>
+<style>
+  :root{--bg:#0f1420;--card:#182034;--card2:#1e2942;--text:#e8ecf4;--muted:#9aa7bd;--ok:#2fbf71;--warn:#f5a623;--bad:#ef5350;--blue:#4f8cff;--line:#2a3654}
+  *{box-sizing:border-box} body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+  header{padding:28px 20px 8px;max-width:1060px;margin:auto}
+  h1{font-size:26px;margin:0 0 6px} .sub{color:var(--muted);line-height:1.6}
+  main{max-width:1060px;margin:auto;padding:12px 20px 60px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0}
+  .card h2{margin:0 0 12px;font-size:19px} .card h3{margin:16px 0 8px;font-size:15px}
+  .badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;margin-right:6px;background:var(--card2);border:1px solid var(--line)}
+  .badge.ok{background:#123324;color:#7de2a8;border-color:#1d5c3a}.badge.warn{background:#3a2c10;color:#ffd27d;border-color:#6b5316}.badge.bad{background:#3a1515;color:#ff9d9b;border-color:#6b2323}.badge.blue{background:#142c52;color:#9dbfff;border-color:#274b85}
+  button{background:var(--blue);color:#fff;border:0;border-radius:9px;padding:9px 16px;font-size:14px;cursor:pointer;margin:4px 6px 4px 0}
+  button.ghost{background:var(--card2);border:1px solid var(--line);color:var(--text)}
+  button.green{background:var(--ok);color:#06280f;font-weight:600}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  input,select{background:#0d1220;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:14px;margin:4px 6px 4px 0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px} th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top} th{color:var(--muted);font-weight:600}
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+  .step{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:14px;line-height:1.65;font-size:14px}
+  .step b{color:#fff}.muted{color:var(--muted)} .small{font-size:13px;line-height:1.7}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:12px}
+  .dev{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .dev .ip{font-size:18px;font-weight:700}
+  .bar{height:10px;background:#0d1220;border-radius:99px;overflow:hidden;margin:10px 0}.bar>i{display:block;height:100%;background:var(--blue);width:0%;transition:width .3s}
+  #log{background:#070a12;border:1px solid var(--line);border-radius:10px;padding:14px;font-family:Consolas,Menlo,monospace;font-size:12.5px;line-height:1.7;height:220px;overflow:auto;white-space:pre-wrap}
+  a{color:#8db4ff} code{background:#0d1220;padding:1px 6px;border-radius:5px}
+  .row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+</style>
+</head>
+<body>
+<header>
+  <h1>📺 StudyOnTV 一键安装助手 <span class="badge blue" id="bVer" title="当前程序版本号">v…</span></h1>
+  <div class="sub">先学再看 · 在这台电脑上点几下，就能把 StudyOnTV 装到家里电视上，再用家长手机管理。<br>
+  原理（来自官方安装文档）：<code>adb connect 电视IP:5555</code> → <code>adb install -r TV版APK</code> → 自动打开应用 → 家长打开 <code>http://电视IP:8099/admin/</code></div>
+  <div style="margin-top:12px" id="statusBadges">
+    <span class="badge" id="bAdb">ADB：检测中…</span>
+    <span class="badge" id="bApk">安装包：检测中…</span>
+    <span class="badge" id="bIp">本机 IP：…</span>
+    <span class="badge" id="bVer2">版本：…</span>
+  </div>
+</header>
+<main>
+
+  <section class="card">
+    <h2>第 0 步 · 准备 adb（只需一次）</h2>
+    <p class="small muted">本助手通过 adb 给电视装应用。如果上方徽章显示「ADB：未找到」，请下载 Google 官方
+    <a href="https://developer.android.com/tools/releases/platform-tools" target="_blank" rel="noopener">platform-tools</a>，
+    解压后把 <code>adb.exe</code>（Mac 是 <code>adb</code>）连同 platform-tools 文件夹放到<b>本程序同一个文件夹</b>里，然后刷新本页。Windows 10 以上和 macOS 都自带下载用的 curl，不用另装。</p>
+  </section>
+
+  <section class="card">
+    <h2>第 1 步 · 在电视上打开 ADB 调试</h2>
+    <div class="steps">
+      <div class="step"><b>① 打开开发者选项</b><br>设置 → 关于 / 关于本机 → 连点「版本号 / 内部版本号」<b>7 次</b> → 返回上一级，出现「开发者选项」。</div>
+      <div class="step"><b>② 打开调试开关</b><br>开发者选项 → 打开 <b>USB 调试</b>，再打开 <b>网络调试 / ADB over network</b>（无线安装必须开这个）。</div>
+      <div class="step"><b>③ 记下电视 IP</b><br>设置 → 网络 / 关于，找类似 <code>192.168.1.100</code> 的地址。电视和这台电脑要连<b>同一个 WiFi</b>。</div>
+      <div class="step"><b>④ 第一次连接时点「允许」</b><br>电脑连过去时电视会弹「允许 USB / 网络调试」，一定要点<b>确定</b>，否则状态会一直是 unauthorized。</div>
+    </div>
+    <h3>各品牌开 ADB 的位置</h3>
+    <table>
+      <tr><th>品牌</th><th>路径</th></tr>
+      <tr><td>小米 / Redmi</td><td>设置 → 关于 → 连点「产品型号」→ 开发者选项</td></tr>
+      <tr><td>TCL / 雷鸟</td><td>设置 → 关于 → 本机信息 → 遥控器按「上 下 左 右」→ 底部「更多」→ ADB</td></tr>
+      <tr><td>索尼</td><td>设置 → 设备偏好设置 → 关于 → 连点「内部版本号」7 次</td></tr>
+      <tr><td>海信 / Vidda</td><td>关于页面开开发者选项，部分型号有专门菜单</td></tr>
+      <tr><td>创维 / 酷开</td><td>关于页面或开发者菜单</td></tr>
+      <tr><td>康佳 / 长虹</td><td>按具体型号找开发者选项</td></tr>
+      <tr><td>OPPO</td><td>设置 → 系统 → 关于本机 → 设备型号 + 按键组合</td></tr>
+    </table>
+    <p class="small muted">前提：电视须是 <b>Android 5.0+</b>。鸿蒙 NEXT / 三星 Tizen / LG webOS 暂不支持。
+    Android 11+ 若只有「无线调试配对码」，请用下方「手动配对」：电视显示配对地址和 6 位码，填进来点配对，成功后电视无线调试页还会显示一个连接端口，扫描时把该端口填到「附加端口」里。</p>
+    <h3>手动连接 / 配对（扫描找不到时用）</h3>
+    <div class="row">
+      <input id="mIp" placeholder="电视 IP，如 192.168.1.100" size="20">
+      <input id="mPort" placeholder="连接端口 5555" size="12" value="5555">
+      <button class="ghost" onclick="manualConnect()">连接并刷新</button>
+    </div>
+    <div class="row">
+      <input id="pIp" placeholder="配对 IP（同电视 IP）" size="20">
+      <input id="pPort" placeholder="配对端口" size="10">
+      <input id="pCode" placeholder="6 位配对码" size="10">
+      <button class="ghost" onclick="manualPair()">配对 adb pair</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>第 2 步 · 准备 TV 版安装包</h2>
+    <div class="row">
+      <button onclick="downloadApk(this)">⬇ 下载最新 TV 版 APK（GitHub Release）</button>
+      <label class="small">或上传已下载的 APK：
+        <input type="file" id="apkFile" accept=".apk">
+      </label>
+      <button class="ghost" onclick="uploadApk(this)">上传</button>
+    </div>
+    <p class="small muted">当前安装包：<span id="apkNow">检测中…</span><br>
+    下载源按文档：蒲公英 TV 版 <a href="https://www.pgyer.com/StudyOnTVTV" target="_blank" rel="noopener">pgyer.com/StudyOnTVTV</a>，
+    GitHub 备用 <a href="https://github.com/btcfoxman/StudyOnTV/releases" target="_blank" rel="noopener">btcfoxman/StudyOnTV Releases</a>。
+    本助手优先从 GitHub Release 自动下载名字带 TV 的 APK；找不到时请手动从蒲公英下载后上传。
+    也可以把 APK 直接放到本程序同目录，刷新即识别（优先选文件名带 tv 的）。</p>
+  </section>
+
+  <section class="card">
+    <h2>第 3 步 · 扫描局域网电视，一键安装</h2>
+    <div class="row">
+      <input id="subnet" size="20" placeholder="网段，如 192.168.1.0/24">
+      <input id="extraPorts" size="18" placeholder="附加端口，如 37000">
+      <button id="btnScan" onclick="startScan(this)">🔍 动态扫描</button>
+      <span class="small muted" id="scanHint">扫描端口 5555（ADB）和 8099（已装 StudyOnTV 的管理页），约几十秒。</span>
+    </div>
+    <div class="bar"><i id="scanBar"></i></div>
+    <div id="devices" class="grid"></div>
+    <p class="small muted" id="noDev">还没有扫描结果。先在电视上打开网络调试，再点「动态扫描」。</p>
+  </section>
+
+  <section class="card">
+    <h2>第 4 步 · 装好后在电视上完成首次设置</h2>
+    <div class="steps">
+      <div class="step"><b>① 设置管理密码</b><br>首次打开先设密码，扫码面板和接口都要用它验证，别告诉孩子。</div>
+      <div class="step"><b>② 按需开权限</b><br>悬浮窗 / 使用情况访问 / 自启动建议开；无障碍、防卸载可选，不开也能学习和管理题库。</div>
+      <div class="step"><b>③ 家长手机管理</b><br>手机和电视同一 WiFi，扫电视上的二维码，或浏览器打开管理页输入密码，即可改规则、管题库、批改主观题。</div>
+      <div class="step"><b>④ 关掉 ADB 调试</b><br>全部装完后，回电视开发者选项关掉调试，减少局域网暴露。</div>
+    </div>
+    <h3>权限说明（来自文档）</h3>
+    <table>
+      <tr><th>权限</th><th>作用</th></tr>
+      <tr><td>显示在其他应用上层</td><td>到时间后显示学习页，无需强制开启无障碍</td></tr>
+      <tr><td>使用情况访问</td><td>识别应用、准确计时，并配合悬浮窗拦截系统设置</td></tr>
+      <tr><td>无障碍服务（可选）</td><td>帮助及时识别应用切换，并显示学习页</td></tr>
+      <tr><td>自启动 / 后台白名单</td><td>减少系统清理，适合电视后台运行</td></tr>
+      <tr><td>防卸载（可选）</td><td>设备管理员授权后，需先解除管理员才能卸载</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>运行日志</h2>
+    <div id="log">（扫描 / 下载 / 安装的进度会实时显示在这里）</div>
+  </section>
+
+  <section class="card">
+    <h2>装不上？对照表</h2>
+    <table>
+      <tr><th>现象</th><th>处理</th></tr>
+      <tr><td>扫描不到电视</td><td>电视没开网络调试 / 不在同一 WiFi / 路由器开了 AP 隔离；或端口不是 5555（见配对说明）</td></tr>
+      <tr><td>状态 unauthorized</td><td>去电视屏幕上点「允许调试」弹窗，再重新连接/安装</td></tr>
+      <tr><td>adb connect 拒绝 / 超时</td><td>没开网络调试或端口不对，回第 1 步检查</td></tr>
+      <tr><td>「应用未安装」/ 解析包错误</td><td>系统低于 Android 5.0，或下载的不是 TV 版 APK</td></tr>
+      <tr><td>装上闪退</td><td>电视 WebView 版本过老，把品牌型号反馈到项目 Issues</td></tr>
+      <tr><td>管理页打不开</td><td>先在电视上打开应用完成首次设置（设密码），且手机/电脑与电视同一局域网</td></tr>
+    </table>
+    <p class="small muted">数据说明：题库和记录只存在电视本地，没有项目云端和账号；本助手也只监听 127.0.0.1、只允许操作局域网私有地址。</p>
+  </section>
+  <footer class="small muted" style="text-align:center;padding:10px 0 4px">
+    StudyOnTV 一键安装助手 <span id="footVer">v…</span> · 版本接口 <code>GET /api/version</code> · 源码见 GitHub 仓库
+  </footer>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const logEl = $('#log');
+let logLines = [];
+function log(msg){
+  const t = new Date().toLocaleTimeString();
+  logLines.push(`[${t}] ${msg}`);
+  if (logLines.length > 300) logLines = logLines.slice(-300);
+  logEl.textContent = logLines.join('\n');
+  logEl.scrollTop = logEl.scrollHeight;
+}
+async function api(path, body){
+  const opt = body ? {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)} : {};
+  const r = await fetch(path, opt);
+  const data = await r.json().catch(()=>({}));
+  if (!r.ok) throw new Error(data.error || data.output || ('HTTP ' + r.status));
+  return data;
+}
+// 异步轮询后端任务（扫描 / 下载 / 安装）
+async function pollJob(jobId, {onTick}={}){
+  let seen = 0;
+  while (true){
+    const job = await api('/api/jobs/' + jobId);
+    while (seen < job.logs.length){ log(job.logs[seen++]); }
+    if (onTick) onTick(job);
+    if (job.status !== 'running') return job;
+    await new Promise(r => setTimeout(r, 700));
+  }
+}
+async function refreshStatus(){
+  try{
+    const s = await api('/api/status');
+    if (s.version){ const vl = 'v' + s.version; $('#bVer').textContent = vl; $('#bVer2').textContent = '版本：' + vl; $('#footVer').textContent = vl; document.title = 'StudyOnTV 一键安装助手 ' + vl; }
+    const bA = $('#bAdb'), bK = $('#bApk'), bI = $('#bIp');
+    if (s.adb.found){ bA.className='badge ok'; bA.textContent='ADB：已就绪 ' + (s.adb.version||''); }
+    else { bA.className='badge bad'; bA.textContent='ADB：未找到（看第 0 步）'; }
+    if (s.apk){ bK.className='badge ok'; bK.textContent='安装包：' + s.apk.name + '（' + s.apk.size_mb + ' MB）'; $('#apkNow').textContent = s.apk.path; }
+    else { bK.className='badge warn'; bK.textContent='安装包：未准备（看第 2 步）'; $('#apkNow').textContent='暂无，请先下载或上传'; }
+    bI.className='badge blue'; bI.textContent='本机 IP：' + (s.local_ip||'未知');
+    if (s.default_subnet && !$('#subnet').value) $('#subnet').value = s.default_subnet;
+  }catch(e){ log('状态检测失败：' + e.message); }
+}
+function stateBadge(dev){
+  if (dev.studyontv_admin) return '<span class="badge ok">已装 StudyOnTV</span>';
+  if (dev.adb_state==='device') return '<span class="badge ok">ADB 已授权</span>';
+  if (dev.adb_state==='unauthorized') return '<span class="badge warn">待电视点「允许」</span>';
+  if (dev.adb_open) return '<span class="badge blue">ADB 端口开放</span>';
+  return '<span class="badge">ADB 未开</span>';
+}
+function renderDevices(devices){
+  const box = $('#devices');
+  $('#noDev').style.display = devices.length ? 'none' : 'block';
+  box.innerHTML = devices.map(d => `
+    <div class="dev">
+      <div class="ip">${d.ip}${d.adb_port? ':'+d.adb_port : ''}</div>
+      <div style="margin:8px 0">${stateBadge(d)}${d.likely_tv? '<span class="badge blue">疑似电视</span>':''}</div>
+      <div class="small muted">${(d.manufacturer||'') + ' ' + (d.model||'未读取到型号（可能未授权）')}${d.android? '<br>Android ' + d.android : ''}</div>
+      <div style="margin-top:10px">
+        <button class="green" onclick="installTo('${d.ip}', ${d.adb_port||5555}, this)">一键安装到这台</button>
+        <button class="ghost" onclick="connectDev('${d.ip}', ${d.adb_port||5555}, this)">连接并刷新</button>
+        <button class="ghost" onclick="launchDev('${d.ip}', ${d.adb_port||5555}, this)">打开应用</button>
+        <a href="${d.manage_url}" target="_blank" rel="noopener"><button class="ghost">家长管理页</button></a>
+        <button class="ghost" onclick="checkManage('${d.ip}', this)">检测管理页</button>
+      </div>
+    </div>`).join('');
+}
+async function startScan(btn){
+  btn.disabled = true; $('#scanBar').style.width='0%'; renderDevices([]);
+  try{
+    const extra = $('#extraPorts').value.split(/[,，\s]+/).map(x=>parseInt(x)).filter(x=>x>0 && x<65536);
+    const {job_id} = await api('/api/scan', {subnet: $('#subnet').value.trim() || null, extra_ports: extra});
+    log('开始扫描局域网…');
+    const job = await pollJob(job_id, {onTick: j => {
+      if (j.progress_total) $('#scanBar').style.width = Math.round(j.progress_done / j.progress_total * 100) + '%';
+      if (j.devices && j.devices.length) renderDevices(j.devices);
+    }});
+    renderDevices(job.devices || []);
+    log(`扫描结束：发现 ${(job.devices||[]).length} 台候选设备`);
+  }catch(e){ log('扫描失败：' + e.message); }
+  btn.disabled = false;
+}
+async function installTo(ip, port, btn){
+  btn.disabled = true;
+  try{
+    const {job_id} = await api('/api/install', {ip, port});
+    log(`开始安装到 ${ip}:${port} …`);
+    const job = await pollJob(job_id);
+    log(job.status === 'success' ? `✅ ${ip} 安装完成，去电视上完成首次设置吧` : `❌ ${ip} 安装未完成，看上面日志里的原因`);
+    refreshStatus();
+  }catch(e){ log('安装失败：' + e.message); }
+  btn.disabled = false;
+}
+async function connectDev(ip, port, btn){
+  btn.disabled = true;
+  try{
+    const r = await api('/api/connect', {ip, port});
+    log(`${ip} 连接结果：${r.output || ''}`);
+    if (r.device) renderDevices([r.device]);
+  }catch(e){ log('连接失败：' + e.message); }
+  btn.disabled = false;
+}
+async function launchDev(ip, port, btn){
+  btn.disabled = true;
+  try{ const r = await api('/api/launch', {ip, port}); log(`${ip} 打开应用：${r.output || '已发送'}`); }
+  catch(e){ log('打开失败：' + e.message); }
+  btn.disabled = false;
+}
+async function checkManage(ip, btn){
+  btn.disabled = true;
+  try{
+    const r = await api('/api/manage-check', {ip});
+    log(`${ip} 管理页：${r.reachable ? '可达' : '不可达'} — ${r.hint}（${r.manage_url}）`);
+  }catch(e){ log('检测失败：' + e.message); }
+  btn.disabled = false;
+}
+async function manualConnect(){
+  const ip = $('#mIp').value.trim(); if(!ip) return log('先填电视 IP');
+  const port = parseInt($('#mPort').value) || 5555;
+  try{
+    const r = await api('/api/connect', {ip, port});
+    log(`手动连接 ${ip}:${port}：${r.output || ''}`);
+    if (r.device) renderDevices([r.device]);
+  }catch(e){ log('连接失败：' + e.message); }
+}
+async function manualPair(){
+  const ip = $('#pIp').value.trim(), pair_port = parseInt($('#pPort').value), code = $('#pCode').value.trim();
+  if(!ip || !pair_port || !code) return log('配对需要：IP、配对端口、6 位配对码');
+  try{ const r = await api('/api/pair', {ip, pair_port, code}); log('配对结果：' + (r.output||'成功')); }
+  catch(e){ log('配对失败：' + e.message); }
+}
+async function downloadApk(btn){
+  btn.disabled = true;
+  try{
+    const {job_id} = await api('/api/download-apk', {});
+    const job = await pollJob(job_id);
+    log(job.status === 'success' ? '✅ TV 版 APK 下载完成' : '❌ 下载未完成，看日志');
+    refreshStatus();
+  }catch(e){ log('下载失败：' + e.message); }
+  btn.disabled = false;
+}
+async function uploadApk(btn){
+  const f = $('#apkFile').files[0];
+  if(!f) return log('先选择一个 .apk 文件');
+  btn.disabled = true;
+  try{
+    const fd = new FormData(); fd.append('apk', f);
+    const r = await fetch('/api/upload-apk', {method:'POST', body: fd});
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error || '上传失败');
+    log('✅ 已上传安装包：' + data.apk.name);
+    refreshStatus();
+  }catch(e){ log('上传失败：' + e.message); }
+  btn.disabled = false;
+}
+refreshStatus();
+</script>
+</body>
+</html>

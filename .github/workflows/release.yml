@@ -1,0 +1,72 @@
+name: Build installers (Windows / macOS / Linux)
+
+# 推送 v* 标签（与 Cargo.toml 的 version 一致，如 v0.1.0）或手动触发时，
+# 为三个平台各编译一个可直接双击运行的可执行文件，压缩包文件名带版本号，
+# 并作为 Release 附件发布。用户不需要装 Rust，下载对应平台的压缩包解压即用。
+# 网页打开后标题和页头徽章会显示同一版本号（来自 /api/status 的 version 字段）。
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: StudyOnTV-Installer-Windows
+            bin: target/release/studyontv-installer.exe
+          - os: macos-latest
+            artifact: StudyOnTV-Installer-macOS
+            bin: target/release/studyontv-installer
+          - os: ubuntu-latest
+            artifact: StudyOnTV-Installer-Linux
+            bin: target/release/studyontv-installer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build release
+        run: cargo build --release
+      - name: Check binary version (macOS / Linux)
+        if: runner.os != 'Windows'
+        run: '"${{ matrix.bin }}" --version'
+      - name: Check binary version (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: '& "${{ matrix.bin }}" --version'
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"(.+)"').Matches[0].Groups[1].Value
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item "${{ matrix.bin }}" "dist/StudyOnTV安装助手-v$v.exe"
+          Copy-Item README.md dist/
+          Compress-Archive -Path dist/* -DestinationPath "${{ matrix.artifact }}-v$v.zip"
+          "PKG=${{ matrix.artifact }}-v$v.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - name: Package (macOS / Linux)
+        if: runner.os != 'Windows'
+        run: |
+          V=$(sed -n 's/^version[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' Cargo.toml | head -1)
+          mkdir -p dist
+          cp "${{ matrix.bin }}" "dist/StudyOnTV安装助手-v$V"
+          cp README.md dist/
+          zip -j "${{ matrix.artifact }}-v$V.zip" dist/*
+          echo "PKG=${{ matrix.artifact }}-v$V.zip" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ env.PKG }}
+      - name: Publish to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.PKG }}

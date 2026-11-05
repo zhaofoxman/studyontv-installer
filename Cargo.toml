@@ -1,0 +1,17 @@
+[package]
+name = "studyontv-installer"
+version = "0.1.0"
+edition = "2021"
+description = "StudyOnTV 一键安装助手：局域网异步扫描 ADB 电视，网页上点击安装到 TV（Windows / macOS / Linux）"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+axum = { version = "0.7", features = ["multipart"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+opt-level = 3
+strip = true
+lto = true
