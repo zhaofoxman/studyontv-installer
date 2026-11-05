@@ -1,0 +1,8 @@
+# Windows：把 MSVC 运行时（CRT）静态链接进 exe，
+# 避免在没装 Visual C++ Redistributable 的电脑上双击时报
+# “找不到 VCRUNTIME140.dll，无法继续执行代码”。
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.aarch64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
